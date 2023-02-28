@@ -3,7 +3,7 @@ const { generateRequest } = require("./buildRequestJSON")
 const { VERIFICATION_BLOCK_CONFIRMATIONS, networkConfig } = require("../../network-config")
 const readline = require("readline-promise").default
 
-task("functions-request", "Initiates a request from an Functions client contract")
+task("functions-request", "Initiates a request from a Functions client contract")
   .addParam("contract", "Address of the client contract to call")
   .addParam("subid", "Billing subscription ID used to pay for the request")
   .addOptionalParam(
@@ -40,7 +40,7 @@ task("functions-request", "Initiates a request from an Functions client contract
     }
 
     // Attach to the required contracts
-    const clientContractFactory = await ethers.getContractFactory("ParametricInsurance")
+    const clientContractFactory = await ethers.getContractFactory("FunctionsConsumer")
     const clientContract = clientContractFactory.attach(contractAddr)
     const OracleFactory = await ethers.getContractFactory("contracts/dev/functions/FunctionsOracle.sol:FunctionsOracle")
     const oracle = await OracleFactory.attach(networkConfig[network.name]["functionsOracleProxy"])
@@ -188,7 +188,7 @@ task("functions-request", "Initiates a request from an Functions client contract
         }
       )
       // Initiate the on-chain request after all listeners are initialized
-      console.log(`\nRequesting new data for ParametricInsurance contract ${contractAddr} on network ${network.name}`)
+      console.log(`\nRequesting new data for FunctionsConsumer contract ${contractAddr} on network ${network.name}`)
       const requestTx = await clientContract.executeRequest(
         request.source,
         request.secrets ?? [],
