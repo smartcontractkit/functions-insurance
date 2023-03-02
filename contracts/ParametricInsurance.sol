@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import "../dev/functions/FunctionsClient.sol";
+import "./dev/functions/FunctionsClient.sol";
 
 contract ParametricInsurance is FunctionsClient {
     using Functions for Functions.Request;

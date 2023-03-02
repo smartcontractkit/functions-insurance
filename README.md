@@ -1,55 +1,70 @@
-# Chainlink Functions Starter Kit
+# Chainlink Functions <> Parametric Insurance Sample app
 
-- [Chainlink Functions Starter Kit](#chainlink-functions-starter-kit)
-- [Overview](#overview)
-- [Quickstart](#quickstart)
-  - [Requirements](#requirements)
-  - [Steps](#steps)
-- [Command Glossary](#command-glossary)
-    - [Functions Commands](#functions-commands)
-    - [Functions Subscription Management Commands](#functions-subscription-management-commands)
-- [Request Configuration](#request-configuration)
-  - [JavaScript Code](#javascript-code)
-    - [Functions Library](#functions-library)
-  - [Modifying Contracts](#modifying-contracts)
-  - [Simulating Requests](#simulating-requests)
-  - [Off-chain Secrets](#off-chain-secrets)
-- [Automation Integration](#automation-integration)
-- [Parametric Insurance](#parametric-insurance)
+This use case showcases how Chainlink Functions can be used to trigger a parametric insurance to offer payouts to clients, with Chainlink Functions being used to fetch data from 3 different weather APIs for tempreture data.
 
-# Overview
+[Parametric Insurance](https://en.wikipedia.org/wiki/Parametric_insurance) offers payouts to clients based upon a trigger event. In the sample, a smart contract will offers payouts based on the temperature in New York City. If the temperature falls below 60 degrees Fahrenheit (you can define the different number) for three consecutive days, the insurance will pay the client with balances. 
 
-<p><b>This project is currently in a closed beta. Request access to send on-chain requests here <a href="https://functions.chain.link/">https://functions.chain.link/</a></b></p>
+There is a smart contract called `ParametricInsurance` created for the use case, and clients can get payout if the predefined conditions in the samrt contract are met. 
 
-<p>Chainlink Functions allows users to request data from almost any API and perform custom computation using JavaScript.</p>
-<p>It works by using a <a href="https://chain.link/education/blockchain-oracles#decentralized-oracles">decentralized oracle network</a> (DON).<br>When a request is initiated, each node in the DON executes the user-provided JavaScript code simultaneously.  Then, nodes use the <a href="https://docs.chain.link/architecture-overview/off-chain-reporting/">Chainlink OCR</a> protocol to come to consensus on the results.  Finally, the median result is returned to the requesting contract via a callback function.</p>
-<p>Chainlink Functions also enables users to share encrypted secrets with each node in the DON.  This allows users to access to APIs that require authentication, without exposing their API keys to the general public.
+In the `ParametricInsurance`, anyone can call function `executeRequest`(there is a limit that only one call per day) and send a request to Chainlink Functions. After the request event is detected by off-chain Chainlink node, the node will fetch the data and execute the computing logics defined in `Parametric-insurance-example.js`. 
 
+After results are calculated, the returned data will be passed through [Chainlink Off-Chain Reporting mechanism(Chainlink OCR)](https://docs.chain.link/architecture-overview/off-chain-reporting/) to be aggregated. After the data aggregation, Chainlink functions will call function `fulfillRequest` and the client would be paid if predefined condition(three consecutive cold days in the use case) is met. 
 
-**To learn how to use the sample apps in this repo  please scroll to the bottom of this README to the [Sample Apps](#sample-apps) section.**
+## requirements
+- node.js version 18
 
-# Quickstart
+## Instructions to run this sample
+1. Clone this repository to your local machine
+2. Open this directory in your command line, then run `npm install` to install all dependencies.
+3. Set environment variables in `.env` file
+Prepend following environment variables in `.env` in the root directory of the repo.
+```
+OPEN_WEATHER_API_KEY="Open weather API key (Get a free one: https://openweathermap.org/)"
+WORLD_WEATHER_ONLINE_API_KEY="World Weather API key (Get a free one: https://www.worldweatheronline.com/weather-api/)"
+AMBEE_DATA_API_KEY="ambee data API key (Get a free one: https://api-dashboard.getambee.com/)"
+CLIENT_ADDR="CLIENT ADDR"
+```
+Then get API keys for 3 different data source above
+- OpenWeather API key: get a free key from [here](https://openweathermap.org/) (60 free calls per minute).
+- WorldWeatherOnline API key: get a free key from [here](https://www.worldweatheronline.com/weather-api/)(500 calls per day).
+- Ambeedata API key: get a free key from [here](https://api-dashboard.getambee.com/)(50,000 free calls).
 
-## Requirements
+`CLIENT_ADDR` is the address you want the parametric insurance to offer payouts.
 
-- Node.js version [18.0](https://nodejs.org/en/download/) or greater
+4. Deploy and verify the RecordLabel contract to an actual blockchain network by running:
+`npx hardhat functions-deploy-client --network network_name_here --verify true`
 
-## Steps
+    Note: Make sure _ETHERSCAN_API_KEY_ or _POLYGONSCAN_API_KEY_ are set if using `--verify true`, depending on which network is used.
 
-1. Clone this repository to your local machine<br><br>
-2. Open this directory in your command line, then run `npm install` to install all dependencies.<br><br>
-3. Set the required environment variables.
-   1. This can be done by renaming the file `.env.example` to `.env` (this renaming is important so that it does not get checked in with git!) and then changing the following values:
-      - `PRIVATE_KEY` for your development wallet.
-      - One of either `MUMBAI_RPC_URL` or `SEPOLIA_RPC_URL` for the network that you intend to use.
-   2. If desired, the `ETHERSCAN_API_KEY` or `POLYGONSCAN_API_KEY` can also be set in order to verify contracts, along with any values used in the `secrets` object in `Functions-request-config.js`.<br><br>
-4. There are two files to notice that the default example will use:
-   - `contracts/FunctionsConsumer.sol` contains the smart contract that will receive the data.
-   - `calculation-example.js` contains JavaScript code that will be executed by each node of the DON.<br><br>
-5. Test an end-to-end request and fulfillment to this contract locally by simulating it using:<br>`npx hardhat functions-simulate`<br><br>
-6. Deploy and verify the consuming contract to an actual blockchain network by running:<br>`npx hardhat functions-deploy-client --network network_name_here --verify true`<br>**Note**: Make sure `ETHERSCAN_API_KEY` or `POLYGONSCAN_API_KEY` are set if using `--verify true`, depending on which network is used.<br><br>
-7. Create, fund & authorize a new Functions billing subscription by running:<br> `npx hardhat functions-sub-create --network network_name_here --amount LINK_funding_amount_here --contract 0xDeployed_client_contract_address_here`<br>**Note**: Ensure your wallet has a sufficient LINK balance before running this command.  Testnet link can be obtained at <a href="https://faucets.chain.link/">faucets.chain.link</a>.<br><br>
-8. Make an on-chain request by running:<br>`npx hardhat functions-request --network network_name_here --contract 0xDeployed_client_contract_address_here --subid subscription_id_number_here`
+5. Create, fund & authorize a new Functions billing subscription by running:
+`npx hardhat functions-sub-create --network network_name_here --amount LINK_funding_amount_here --contract 0xDeployed_client_contract_address_here`
+
+    Note: Ensure your wallet has a sufficient LINK balance before running this command. Testnet LINK can be obtained at [faucets.chain.link](https://faucets.chain.link/).
+
+6. Transfer some testnet native tokens to the contract with your wallet(metamask maybe).
+
+7. Make an on-chain request by running:
+
+    `npx hardhat functions-request --network network_name_here --contract 0xDeployed_client_contract_address_here --subid subscription_id_number_here`, replacing subscription_id_number_here with the subscription ID you received from the previous step
+
+8. Resend on-chain requests(at least twice) to make sure the value of variable `consecutiveColdDays` reach 3 by running the same command in last step:
+
+    `npx hardhat functions-request --network network_name_here --contract 0xDeployed_client_contract_address_here --subid subscription_id_number_here`, replacing subscription_id_number_here with the subscription ID you received from the previous step
+
+9. Check if the client(client address is defined in `CLIENT_ADDR` in .env) receives the balance of insurance contract. 
+
+## Tips
+1. The default gaslimit for callback function is 100,000 and it may be insufficient. use `--gaslimit 300000` when send request like command below:
+```
+npx hardhat functions-request --network {network name} --contract {your contract addr} --subid {your subid} --gaslimit 300000
+```
+2. Want to check if the client paid by the parametric contract?
+
+     Please transfer some native token on your network to the insurance contract before the number of consecutive days reach 3, and you can check if the token transferred to client address when the number of consucutive days reach 3.
+
+3. Set a different temepreture consiered as cold and threshhold of cold days
+    
+    Update the state variable `coldTemp` and `consecutiveColdDays` in smart contract `ParametricInsurance.sol`. You can make the smart contract offer payouts if, for example, the temperature falls below 10 degrees Fahrenheit for 10 consecutive days.
 
 # Command Glossary
 
