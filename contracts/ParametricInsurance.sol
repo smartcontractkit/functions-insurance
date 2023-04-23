@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import "./dev/functions/FunctionsClient.sol";
+// import "./dev/functions/FunctionsClient.sol";
+import {Functions, FunctionsClient} from "./dev/functions/FunctionsClient.sol";
 
 contract ParametricInsurance is FunctionsClient {
   using Functions for Functions.Request;
@@ -53,7 +54,7 @@ contract ParametricInsurance is FunctionsClient {
    * @dev Prevents a data request to be called unless it's been a day since the last call (to avoid spamming and spoofing results)
    */
   modifier callFrequencyOncePerDay() {
-    require((block.timestamp - currentTempDateChecked) > DAY_IN_SECONDS, "Can only check temperature once per day");
+    require((block.timestamp - currentTempDateChecked) > DAY_IN_SECONDS, "One check per day");
     _;
   }
 
@@ -61,7 +62,7 @@ contract ParametricInsurance is FunctionsClient {
    * @dev Prevents a function being run unless contract is still active
    */
   modifier onContractActive() {
-    require(contractActive == true, "Contract has ended, cant interact with it anymore");
+    require(contractActive == true, "Contract has ended");
     _;
   }
 
@@ -75,7 +76,6 @@ contract ParametricInsurance is FunctionsClient {
   function executeRequest(
     string calldata source,
     bytes calldata secrets,
-    // Functions.Location secretsLocation,
     string[] calldata args,
     uint64 subscriptionId,
     uint32 gasLimit
@@ -83,11 +83,6 @@ contract ParametricInsurance is FunctionsClient {
     Functions.Request memory req;
     req.initializeRequest(Functions.Location.Inline, Functions.CodeLanguage.JavaScript, source);
     if (secrets.length > 0) {
-      // if (secretsLocation == Functions.Location.Inline) {
-      //     req.addInlineSecrets(secrets);
-      // } else {
-      //     req.addRemoteSecrets(secrets);
-      // }
       req.addRemoteSecrets(secrets);
     }
     if (args.length > 0) req.addArgs(args);
