@@ -14,40 +14,69 @@ After results are calculated, the returned data will be passed through [Chainlin
 - node.js version 18
 
 ## Instructions to run this sample
-1. Clone this repository to your local machine
+1. Clone this repository to your local machine by running `git clone `
 2. Open this directory in your command line, then run `npm install` to install all dependencies.
-3. Set environment variables in `.env` file
-Prepend following environment variables in `.env` in the root directory of the repo.
-```
-OPEN_WEATHER_API_KEY="Open weather API key (Get a free one: https://openweathermap.org/)"
-WORLD_WEATHER_ONLINE_API_KEY="World Weather API key (Get a free one: https://www.worldweatheronline.com/weather-api/)"
-AMBEE_DATA_API_KEY="ambee data API key (Get a free one: https://api-dashboard.getambee.com/)"
-CLIENT_ADDR="CLIENT ADDR"
-```
-Then get API keys for 3 different data source above
-- OpenWeather API key: get a free key from [here](https://openweathermap.org/) (60 free calls per minute).
-- WorldWeatherOnline API key: get a free key from [here](https://www.worldweatheronline.com/weather-api/)(500 calls per day).
-- Ambeedata API key: get a free key from [here](https://api-dashboard.getambee.com/)(50,000 free calls).
+3. Create a Github Token for secrets. 
 
-`CLIENT_ADDR` is the address you want the parametric insurance to offer payouts.
+    To allow the starter kit(the repo is a fork from starter kit) to write gists on your behalf, create a github fine-grained personal access token. Please find more info about secrets [here](https://docs.chain.link/chainlink-functions/tutorials/api-use-secrets).
+    
+    Create a token based on following steps. 
 
-4. Deploy and verify the RecordLabel contract to an actual blockchain network by running:
+    - Visit Github tokens settings page.
+    - Click on Generate new token.
+    - Provide a name to your token and define the expiration date.
+    - Under Account permissions, enable Read and write for Gists. Note: Do not enable additional settings.
+    - Click on Generate token and copy your fine-grained personal access token.
+4. Add encrypted environment variables to `.env.enc`
+    - run `npx env-enc set-pw` to set a password for file `.env-enc`
+    - run `npx env-enc set` to set required env var. Env vars includes rpc urls you plan to use, private key, exploerer API and weather APIs. 
+  
+    you have a `env-enc` file like below:
+```
+MUMBAI_RPC_URL: ENCRYPTED|xxx
+PRIVATE_KEY: ENCRYPTED|xxx
+POLYGONSCAN_API_KEY: ENCRYPTED|xxx
+GITHUB_API_TOKEN: ENCRYPTED|xxx
+OPEN_WEATHER_API_KEY: ENCRYPTED|xxx
+WORLD_WEATHER_API_KEY: ENCRYPTED|xxx
+AMBEE_DATA_API_KEY: ENCRYPTED|xxx
+CLIENT_ADDR: ENCRYPTED|xxx
+```
+- Get a free `MUMBAI_RPC_URL` from [Alchemy](https://www.alchemy.com/).
+- `PRIVATE_KEY` is your private key and KEEP IT IN SECRET in any case. 
+- Get a free `POLYGONSCAN_API_KEY` from [Polygonscan](https://polygonscan.com/myapikey). 
+- `GITHUB_API_TOKEN` is the token created in step 3. 
+- Get free `OPEN_WEATHER_API_KEY` from  https://openweathermap.org/
+- Get free `WORLD_WEATHER_ONLINE_API_KEY` from https://www.worldweatheronline.com/weather-api/
+- Get a free `AMBEE_DATA_API_KEY` from https://api-dashboard.getambee.com/
+- `CLIENT_ADDR` is the client who is supposed to receive payouts in the use case. 
+
+5. Deploy and verify the necessary contracts to an actual blockchain network by running:
 `npx hardhat functions-deploy-client --network network_name_here --verify true`
 
-    Note: Make sure _ETHERSCAN_API_KEY_ or _POLYGONSCAN_API_KEY_ are set if using `--verify true`, depending on which network is used.
+    Note: Make sure _ETHERSCAN_API_KEY_ or _POLYGONSCAN_API_KEY_ are set in file `.env-enc` if using `--verify true`, depending on which network is used.
 
-5. Create, fund & authorize a new Functions billing subscription by running:
+6. Create, fund & authorize a new Functions billing subscription by running:
 `npx hardhat functions-sub-create --network network_name_here --amount LINK_funding_amount_here --contract 0xDeployed_client_contract_address_here`
 
     Note: Ensure your wallet has a sufficient LINK balance before running this command. Testnet LINK can be obtained at [faucets.chain.link](https://faucets.chain.link/).
 
-6. Transfer some testnet native tokens to the contract with your wallet(metamask maybe).
+7. Transfer some testnet native tokens to the contract with your wallet(metamask maybe).
 
-- [Chainlink Functions Starter Kit](#chainlink-functions-starter-kit)
-- [Overview](#overview)
-- [Quickstart](#quickstart)
-  - [Requirements](#requirements)
-  - [Steps](#steps)
+8. Resend on-chain requests(at least twice) to make sure the value of variable `consecutiveColdDays` reach 3 by running the same command in last step:
+
+    `npx hardhat functions-request --network network_name_here --contract 0xDeployed_client_contract_address_here --subid subscription_id_number_here`, replacing subscription_id_number_here with the subscription ID you received from the previous step
+
+9. Check if the client(client address is defined in `CLIENT_ADDR` in `.env-enc`) receives the balance of insurance contract. 
+
+## Tips
+1. The default gaslimit for callback function is 100,000 and it may be insufficient. use `--gaslimit 300000` when send request like command below:
+```
+npx hardhat functions-request --network {network name} --contract {your contract addr} --subid {your subid} --gaslimit 300000
+```
+----
+Content below is general knowkedge from [function-hardhat-starter-kit](https://github.com/smartcontractkit/functions-hardhat-starter-kit).
+
 - [Environment Variable Management](#environment-variable-management)
   - [Environment Variable Management Commands](#environment-variable-management-commands)
 - [Functions Command Glossary](#functions-command-glossary)
@@ -60,46 +89,6 @@ Then get API keys for 3 different data source above
   - [Simulating Requests](#simulating-requests)
   - [Off-chain Secrets](#off-chain-secrets)
 - [Automation Integration](#automation-integration)
-
-    `npx hardhat functions-request --network network_name_here --contract 0xDeployed_client_contract_address_here --subid subscription_id_number_here`, replacing subscription_id_number_here with the subscription ID you received from the previous step
-
-8. Resend on-chain requests(at least twice) to make sure the value of variable `consecutiveColdDays` reach 3 by running the same command in last step:
-
-    `npx hardhat functions-request --network network_name_here --contract 0xDeployed_client_contract_address_here --subid subscription_id_number_here`, replacing subscription_id_number_here with the subscription ID you received from the previous step
-
-9. Check if the client(client address is defined in `CLIENT_ADDR` in .env) receives the balance of insurance contract. 
-
-## Tips
-1. The default gaslimit for callback function is 100,000 and it may be insufficient. use `--gaslimit 300000` when send request like command below:
-```
-npx hardhat functions-request --network {network name} --contract {your contract addr} --subid {your subid} --gaslimit 300000
-```
-2. Want to check if the client paid by the parametric contract?
-
-- Node.js version [18](https://nodejs.org/en/download/)
-
-## Steps
-
-1. Clone this repository to your local machine<br><br>
-2. Open this directory in your command line, then run `npm install` to install all dependencies.<br><br>
-3. Aquire a Github personal access token which allows reading and writing Gists.
-   1. Visit [https://github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta) and click "Generate new token"
-   2. Name the token and enable read & write access for Gists from the "Account permissions" drop-down menu. Do not enable any additional permissions.
-   3. Click "Generate token" and copy the resulting personal access token for step 4.<br><br>
-4. Set the required environment variables.
-   1. Set an encryption password for your environment variables to a secure password by running:<br>`npx env-enc set-pw`<br>
-   2. Use the command `npx env-enc set` to set the required environment variables (see [Environment Variable Management](#environment-variable-management)):
-      - _GITHUB_API_TOKEN_ for your Github token obtained from step 3
-      - _PRIVATE_KEY_ for your development wallet
-      - _MUMBAI_RPC_URL_ or _SEPOLIA_RPC_URL_ for the network that you intend to use
-   3. If desired, the _ETHERSCAN_API_KEY_ or _POLYGONSCAN_API_KEY_ can be set in order to verify contracts, along with any values used in the _secrets_ object in _Functions-request-config.js_ such as _COINMARKETCAP_API_KEY_.<br><br>
-5. There are two files to notice that the default example will use:
-   - _contracts/FunctionsConsumer.sol_ contains the smart contract that will receive the data
-   - _calculation-example.js_ contains JavaScript code that will be executed by each node of the DON<br><br>
-6. Test an end-to-end request and fulfillment locally by simulating it using:<br>`npx hardhat functions-simulate`<br><br>
-7. Deploy and verify the client contract to an actual blockchain network by running:<br>`npx hardhat functions-deploy-client --network network_name_here --verify true`<br>**Note**: Make sure _ETHERSCAN_API_KEY_ or _POLYGONSCAN_API_KEY_ are set if using `--verify true`, depending on which network is used.<br><br>
-8. Create, fund & authorize a new Functions billing subscription by running:<br> `npx hardhat functions-sub-create --network network_name_here --amount LINK_funding_amount_here --contract 0xDeployed_client_contract_address_here`<br>**Note**: Ensure your wallet has a sufficient LINK balance before running this command. Testnet LINK can be obtained at <a href="https://faucets.chain.link/">faucets.chain.link</a>.<br><br>
-9. Make an on-chain request by running:<br>`npx hardhat functions-request --network network_name_here --contract 0xDeployed_client_contract_address_here --subid subscription_id_number_here`
 
 # Environment Variable Management
 
