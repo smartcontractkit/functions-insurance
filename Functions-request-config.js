@@ -1,7 +1,7 @@
 const fs = require("fs")
 
-// Loads environment variables from .env file (if it exists)
-require("dotenv").config()
+// Loads environment variables from .env.enc file (if it exists)
+require("@chainlink/env-enc").config()
 
 const Location = {
   Inline: 0,
@@ -24,21 +24,19 @@ const ReturnType = {
 
 // Configure the request by setting the fields below
 const requestConfig = {
-  // location of source code (only Inline is currently supported)
+  // Location of source code (only Inline is currently supported)
   codeLocation: Location.Inline,
-  // location of secrets (Inline or Remote)
-  secretsLocation: Location.Inline,
-  // code language (only JavaScript is currently supported)
+  // Code language (only JavaScript is currently supported)
   codeLanguage: CodeLanguage.JavaScript,
   // string containing the source code to be executed
   source: fs.readFileSync("./Parametric-insurance-example.js").toString(),
-  
+
   // secrets can be accessed within the source code with `secrets.varName` (ie: secrets.apiKey)
-  secrets: { 
+  secrets: {
     openWeatherApiKey: process.env.OPEN_WEATHER_API_KEY,
     worldWeatherApiKey: process.env.WORLD_WEATHER_API_KEY,
     ambeeWeatherApiKey: process.env.AMBEE_DATA_API_KEY,
-    clientAddress: process.env.CLIENT_ADDR
+    clientAddress: process.env.CLIENT_ADDR,
   },
   // ETH wallet key used to sign secrets so they cannot be accessed by a 3rd party
   walletPrivateKey: process.env["PRIVATE_KEY"],
@@ -49,10 +47,6 @@ const requestConfig = {
   expectedReturnType: ReturnType.uint256,
   // Redundant URLs which point to encrypted off-chain secrets
   secretsURLs: [],
-  // Default offchain secrets object used by the `functions-build-offchain-secrets` command
-  globalOffchainSecrets: {},
-  // Per-node offchain secrets objects used by the `functions-build-offchain-secrets` command
-  perNodeOffchainSecrets: [],
 }
 
 module.exports = requestConfig
